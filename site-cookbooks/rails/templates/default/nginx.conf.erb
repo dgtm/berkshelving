@@ -1,0 +1,11 @@
+upstream <%= node.rails.app_name %> {
+  server unix:/tmp/unicorn.sock fail_timeout=0;
+}
+server {
+    listen 80 default;
+    
+    access_log "<%= node.nginx.log_dir %>/nginx_access.log";
+    error_log "<%= node.nginx.log_dir %>/nginx_error.log";
+    keepalive_timeout 10;
+    root "<%= node.rails.app_root %>/current";
+}

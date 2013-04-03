@@ -1,0 +1,6 @@
+maintainer        "dgtm"
+maintainer_email  "dipeshgtm@gmail.com"
+description       "Configures Rails"
+version           "0.1"
+depends "nginx"
+depends "unicorn"

@@ -1,0 +1,104 @@
+# Cloudfactory configuration file for Unicorn (not Rack) when used
+# with daemonization (unicorn_rails -D) started in your working directory.
+
+rails_env = "<%= @node[:rails][:env] %>" || ENV['RAILS_ENV']
+
+app_path = "/home/<%= @deployer %>/<%= @node[:rails][:root] %>/current"
+
+
+
+pid "#{app_path}/tmp/pids/unicorn.pid"
+
+#LOG-O-RAMA
+#Separate Logs for normal/abnormal would be more helpful
+stdout_path "#{app_path}/log/unicorn.log"
+stderr_path "#{app_path}/log/unicorn_err.log"
+
+# this should be >= nr_cpus ideally , but could be increased if the dedicated system has more RAM to spare.
+# Simple ENV parsing to allocate properly defined no. of workers to each server.
+worker_processes ['production', 'staging', 'sandbox'].include?(rails_env) ? 4 : 1
+
+# for super-fast worker spawn times
+preload_app true
+
+# Restart any workers that haven't responded in 180 seconds
+timeout 180
+
+# Listen on a Unix data socket
+# Since we are using front-end webserver and unicorn on same machine, listening socket will be more upto performance.
+listen "/tmp/unicorn.sock", :backlog => 128
+
+before_exec do |server|
+    ENV['BUNDLE_GEMFILE'] = "#{app_path}/Gemfile"
+end
+
+before_fork do |server, worker|
+  # When sent a USR2, Unicorn will suffix its pidfile with .oldbin and
+  # immediately start loading up a new version of itself (loaded with a new
+  # version of our app). When this new Unicorn is completely loaded
+  # it will begin spawning workers. The first worker spawned will check to
+  # see if an .oldbin pidfile exists. If so, this means we've just booted up
+  # a new Unicorn and need to tell the old one that it can now die. To do so
+  # we send it a QUIT.
+  #
+
+  #Zero-downtime comes from here !!!!!
+  old_pid = "#{Rails.root}/tmp/pids/unicorn.pid.oldbin"
+  if File.exists?(old_pid) && server.pid != old_pid
+    begin
+      Process.kill("QUIT", File.read(old_pid).to_i)
+    rescue Errno::ENOENT, Errno::ESRCH
+      # someone else did our job for us
+    end
+  end
+end
+
+
+after_fork do |server, worker|
+  ##
+  # Unicorn master loads the app then forks off workers - because of the way
+  # Unix forking works, we need to make sure we aren't using any of the parent's
+  # sockets, e.g. db connection
+
+  # Start Redis
+  # If you set the connection to Redis *before* forking,
+  # you will cause forks to share a file descriptor.
+  # This causes a concurrency problem by which one fork
+  # can read or write to the socket while others are
+  # performing other operations.
+  # Most likely you'll be getting exceptions about
+  # about a 'Protocol error' and the initial reply byte.
+  # Thus we need to connect to Redis after forking the
+  # worker processes.
+
+
+  ##
+  # Start Mongo
+  begin
+    Mongoid.reconnect! if defined?(Mongoid)
+  rescue
+    Rails.logger.error("Couldn't connect to Mongo Server")
+  end
+
+  ##
+  # Master process is root owned, dropping workers to less privileged user to deploy:deploy
+
+  begin
+    uid, gid = Process.euid, Process.egid
+    user, group = <%= @deployer %>, <%= @deployer_group %>
+    target_uid = Etc.getpwnam(user).uid
+    target_gid = Etc.getgrnam(group).gid
+    worker.tmp.chown(target_uid, target_gid)
+    if uid != target_uid || gid != target_gid
+      Process.initgroups(user, target_gid)
+      Process::GID.change_privilege(target_gid)
+      Process::UID.change_privilege(target_uid)
+    end
+  rescue => e
+    if Rails.env == 'development'
+      Rails.logger.error "couldn't change user, oh well"
+    else
+      raise e
+    end
+  end
+end

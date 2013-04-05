@@ -1,0 +1,9 @@
+{
+  "id": "mongodb",
+  "pass": {
+    "iv": "YypL4r7pxtEykw8XxAIpjQ==\n",
+    "cipher": "aes-256-cbc",
+    "version": 1,
+    "encrypted_data": "en6v1C9koHjFh8fHUETBl6mENsW9fqtWx7AEjVvh68Dd8BT26FYV/cuZBGmb\nkfVh\n"
+  }
+}

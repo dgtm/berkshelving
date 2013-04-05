@@ -1,5 +1,6 @@
 include_recipe 'nginx::source'
 include_recipe 'unicorn'
+include_recipe "god"
 
 gem_package 'bundler'
 
@@ -21,3 +22,7 @@ template "#{node.nginx.dir}/sites-available/#{node.rails.app_name}.conf" do
 end
 
 nginx_site "#{node.rails.app_name}.conf"
+
+god_monitor "nginx" do
+  config "nginx.god.erb"
+end

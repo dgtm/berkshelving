@@ -3,7 +3,10 @@ SITE
   specs:
     apt (1.9.0)
     build-essential (1.3.4)
+    god (1.0.2)
+      runit (<= 0.16.2)
     ohai (1.1.8)
+    runit (0.16.2)
     yum (2.2.0)
 
 GIT
@@ -30,6 +33,7 @@ PATH
     unicorn (0.1.0)
 
 DEPENDENCIES
+  god (>= 0)
   nginx (>= 0)
   rails (>= 0)
   unicorn (>= 0)

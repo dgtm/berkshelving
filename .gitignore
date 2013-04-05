@@ -12,4 +12,6 @@ Berksfile.lock
 Gemfile.lock
 bin/*
 .bundle/*
-
+.chef/syntax_check_cache
+.chef/.chef/*
+tmp/

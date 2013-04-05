@@ -8,5 +8,7 @@ validation_key           "#{current_dir}/validation.pem"
 chef_server_url          "https://api.opscode.com/organizations/nepal"
 cache_type               'BasicFile'
 cookbook_path            ["#{current_dir}/../cookbooks"]
+cache_options( :path => "#{ENV['HOME']}/.chef/checksums" )
+encrypted_data_bag_secret 'secret'
 knife[:aws_access_key_id]      = ENV['AWS_ACCESS_KEY_ID']
 knife[:aws_secret_access_key]  = ENV['AWS_SECRET_ACCESS_KEY']
